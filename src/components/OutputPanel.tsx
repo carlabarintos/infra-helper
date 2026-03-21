@@ -1,0 +1,268 @@
+import React, { useState, useMemo } from 'react';
+import { Copy, Download, Check, FileCode, GitBranch, Settings2 } from 'lucide-react';
+import { useStore } from '../store/useStore';
+import { generateAllFiles } from '../generators/bicep/mainBicep';
+import { downloadFile, copyToClipboard } from '../utils/download';
+
+interface TabDef {
+  id: string;
+  label: string;
+  filename: string;
+  icon?: React.ReactNode;
+}
+
+// ─── Syntax Highlighting ──────────────────────────────────────────────────────
+
+function highlightBicep(code: string): string {
+  return code
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    // Comments
+    .replace(/(\/\/[^\n]*)/g, '<span class="token-comment">$1</span>')
+    // Decorators
+    .replace(/(@[a-zA-Z]+)/g, '<span class="token-decorator">$1</span>')
+    // Keywords
+    .replace(
+      /\b(targetScope|param|var|resource|module|output|if|else|for|in|existing|import|type|func|extends)\b/g,
+      '<span class="token-keyword">$1</span>'
+    )
+    // String literals
+    .replace(/(&#39;[^&#39;]*&#39;|'[^']*')/g, '<span class="token-string">$1</span>')
+    // Numbers
+    .replace(/\b(\d+)\b/g, '<span class="token-number">$1</span>');
+}
+
+function highlightYaml(code: string): string {
+  return code
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    // Comments
+    .replace(/(#[^\n]*)/g, '<span class="token-comment">$1</span>')
+    // Keys
+    .replace(/^(\s*)([a-zA-Z_-]+):/gm, '$1<span class="token-param">$2</span>:')
+    // Strings
+    .replace(/(["'][^"']*["'])/g, '<span class="token-string">$1</span>');
+}
+
+function highlightJson(code: string): string {
+  return code
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/("(?:[^"\\]|\\.)*")(\s*:)/g, '<span class="token-param">$1</span>$2')
+    .replace(/:\s*("(?:[^"\\]|\\.)*")/g, ': <span class="token-string">$1</span>')
+    .replace(/\b(true|false|null)\b/g, '<span class="token-keyword">$1</span>')
+    .replace(/\b(\d+(?:\.\d+)?)\b/g, '<span class="token-number">$1</span>');
+}
+
+function getHighlighter(filename: string): (code: string) => string {
+  if (filename.endsWith('.bicep')) return highlightBicep;
+  if (filename.endsWith('.yml') || filename.endsWith('.yaml')) return highlightYaml;
+  if (filename.endsWith('.json')) return highlightJson;
+  return (code: string) => code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ─── Code Block ────────────────────────────────────────────────────────────────
+
+function CodeBlock({ content, filename }: { content: string; filename: string }) {
+  const [copied, setCopied] = useState(false);
+  const highlighter = getHighlighter(filename);
+
+  async function handleCopy() {
+    await copyToClipboard(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  const lines = content.split('\n');
+
+  return (
+    <div className="relative flex-1 overflow-hidden flex flex-col">
+      {/* File path bar */}
+      <div className="flex items-center justify-between px-3 py-1.5 bg-gray-900/60 border-b border-gray-700/50 shrink-0">
+        <span className="text-xs text-gray-500 font-mono">{filename}</span>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={handleCopy}
+            className="flex items-center gap-1 text-xs text-gray-500 hover:text-white transition-colors px-2 py-0.5 rounded hover:bg-gray-700"
+          >
+            {copied ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
+            {copied ? 'Copied!' : 'Copy'}
+          </button>
+          <button
+            onClick={() => downloadFile(filename, content)}
+            className="flex items-center gap-1 text-xs text-gray-500 hover:text-white transition-colors px-2 py-0.5 rounded hover:bg-gray-700"
+          >
+            <Download size={12} />
+            Save
+          </button>
+        </div>
+      </div>
+
+      {/* Code area */}
+      <div className="flex-1 overflow-auto">
+        <pre className="code-block p-0 m-0 text-gray-300 min-h-full">
+          <table className="w-full border-collapse">
+            <tbody>
+              {lines.map((line, i) => (
+                <tr key={i} className="hover:bg-gray-800/30">
+                  <td className="line-number select-none text-gray-600 text-right pr-3 pl-2 w-10 text-xs border-r border-gray-800 align-top">
+                    {i + 1}
+                  </td>
+                  <td
+                    className="pl-4 pr-4 whitespace-pre-wrap break-all align-top"
+                    dangerouslySetInnerHTML={{ __html: highlighter(line) || '&nbsp;' }}
+                  />
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </pre>
+      </div>
+    </div>
+  );
+}
+
+// ─── Output Panel ─────────────────────────────────────────────────────────────
+
+export function OutputPanel() {
+  const { state } = useStore();
+  const { project } = state;
+  const [activeTab, setActiveTab] = useState<string>('main.bicep');
+
+  const files = useMemo(() => generateAllFiles(project), [project]);
+
+  const tabs: TabDef[] = useMemo(() => {
+    const result: TabDef[] = [];
+
+    if (files['infra/main.bicep']) {
+      result.push({
+        id: 'main.bicep',
+        label: 'main.bicep',
+        filename: 'infra/main.bicep',
+        icon: <FileCode size={12} />,
+      });
+    }
+
+    if (files['infra/modules/networking.bicep']) {
+      result.push({
+        id: 'networking',
+        label: 'networking',
+        filename: 'infra/modules/networking.bicep',
+        icon: <FileCode size={12} />,
+      });
+    }
+
+    project.resources.forEach((r) => {
+      const sn = r.name.replace(/[^a-zA-Z0-9-]/g, '-').toLowerCase();
+      const typePrefix: Record<string, string> = {
+        functionApp: 'functionApp',
+        appService: 'appService',
+        storageAccount: 'storageAccount',
+        keyVault: 'keyVault',
+        appInsights: 'appInsights',
+      };
+      const prefix = typePrefix[r.type];
+      const key = `infra/modules/${prefix}-${sn}.bicep`;
+      if (files[key]) {
+        result.push({
+          id: key,
+          label: `${prefix}-${sn}`,
+          filename: key,
+          icon: <FileCode size={12} />,
+        });
+      }
+    });
+
+    if (files['.github/workflows/deploy.yml']) {
+      result.push({
+        id: 'github',
+        label: 'GitHub Actions',
+        filename: '.github/workflows/deploy.yml',
+        icon: <GitBranch size={12} />,
+      });
+    }
+
+    (['dev', 'staging', 'prod'] as const).forEach((env) => {
+      const key = `infra/parameters.${env}.json`;
+      if (files[key]) {
+        result.push({
+          id: `params-${env}`,
+          label: `params.${env}`,
+          filename: key,
+          icon: <Settings2 size={12} />,
+        });
+      }
+    });
+
+    return result;
+  }, [files, project.resources]);
+
+  // Auto-select first tab if current tab is gone
+  const activeTabDef = tabs.find((t) => t.id === activeTab) ?? tabs[0];
+
+  function handleDownloadAll() {
+    Object.entries(files).forEach(([filename, content], i) => {
+      setTimeout(() => downloadFile(filename, content), i * 100);
+    });
+  }
+
+  if (Object.keys(files).length === 0) {
+    return (
+      <div className="flex flex-col h-full items-center justify-center text-center p-6">
+        <FileCode size={40} className="text-gray-700 mb-3" />
+        <div className="text-sm text-gray-500 font-medium">No files to show</div>
+        <div className="text-xs text-gray-600 mt-1 max-w-[200px]">
+          Add resources using the palette on the left to generate Bicep files.
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Tab bar */}
+      <div className="flex items-center gap-0 border-b border-gray-700/50 overflow-x-auto shrink-0 bg-gray-900/20">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-1.5 px-3 py-2 text-xs whitespace-nowrap border-b-2 transition-colors ${
+              activeTabDef?.id === tab.id
+                ? 'border-[#0078d4] text-[#0078d4] bg-gray-800/30'
+                : 'border-transparent text-gray-500 hover:text-gray-300 hover:bg-gray-800/20'
+            }`}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Code content */}
+      {activeTabDef && files[activeTabDef.filename] && (
+        <CodeBlock
+          key={activeTabDef.filename}
+          content={files[activeTabDef.filename]}
+          filename={activeTabDef.filename}
+        />
+      )}
+
+      {/* Bottom bar */}
+      <div className="shrink-0 flex items-center justify-between px-3 py-2 border-t border-gray-700/50 bg-gray-900/30">
+        <span className="text-xs text-gray-600">
+          {Object.keys(files).length} file{Object.keys(files).length !== 1 ? 's' : ''} generated
+        </span>
+        <button
+          onClick={handleDownloadAll}
+          className="flex items-center gap-1.5 text-xs bg-[#0078d4] hover:bg-[#006cbf] text-white px-3 py-1.5 rounded-md transition-colors"
+        >
+          <Download size={12} />
+          Download All Files
+        </button>
+      </div>
+    </div>
+  );
+}
