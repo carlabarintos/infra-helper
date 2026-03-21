@@ -1,8 +1,9 @@
 import React, { useState, useMemo } from 'react';
-import { Copy, Download, Check, FileCode, GitBranch, Settings2 } from 'lucide-react';
+import { Copy, Download, Check, FileCode, GitBranch, Settings2, Network } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { generateAllFiles } from '../generators/bicep/mainBicep';
 import { downloadFile, copyToClipboard } from '../utils/download';
+import { DiagramPanel } from './DiagramPanel';
 
 interface TabDef {
   id: string;
@@ -130,7 +131,7 @@ function CodeBlock({ content, filename }: { content: string; filename: string })
 export function OutputPanel() {
   const { state } = useStore();
   const { project } = state;
-  const [activeTab, setActiveTab] = useState<string>('main.bicep');
+  const [activeTab, setActiveTab] = useState<string>('diagram');
 
   const files = useMemo(() => generateAllFiles(project), [project]);
 
@@ -200,37 +201,28 @@ export function OutputPanel() {
     return result;
   }, [files, project.resources]);
 
-  // Auto-select first tab if current tab is gone
-  const activeTabDef = tabs.find((t) => t.id === activeTab) ?? tabs[0];
-
   function handleDownloadAll() {
     Object.entries(files).forEach(([filename, content], i) => {
       setTimeout(() => downloadFile(filename, content), i * 100);
     });
   }
 
-  if (Object.keys(files).length === 0) {
-    return (
-      <div className="flex flex-col h-full items-center justify-center text-center p-6">
-        <FileCode size={40} className="text-gray-700 mb-3" />
-        <div className="text-sm text-gray-500 font-medium">No files to show</div>
-        <div className="text-xs text-gray-600 mt-1 max-w-[200px]">
-          Add resources using the palette on the left to generate Bicep files.
-        </div>
-      </div>
-    );
-  }
+  const allTabs = [
+    { id: 'diagram', label: 'Diagram', filename: '', icon: <Network size={12} /> },
+    ...tabs,
+  ];
+  const activeTabDef2 = allTabs.find((t) => t.id === activeTab) ?? allTabs[0];
 
   return (
     <div className="flex flex-col h-full">
       {/* Tab bar */}
       <div className="flex items-center gap-0 border-b border-gray-700/50 overflow-x-auto shrink-0 bg-gray-900/20">
-        {tabs.map((tab) => (
+        {allTabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-1.5 px-3 py-2 text-xs whitespace-nowrap border-b-2 transition-colors ${
-              activeTabDef?.id === tab.id
+              activeTabDef2?.id === tab.id
                 ? 'border-[#2ea3f2] text-[#2ea3f2] bg-gray-800/30'
                 : 'border-transparent text-gray-500 hover:text-gray-300 hover:bg-gray-800/20'
             }`}
@@ -241,12 +233,19 @@ export function OutputPanel() {
         ))}
       </div>
 
+      {/* Diagram tab */}
+      {activeTabDef2?.id === 'diagram' && (
+        <div className="flex-1 overflow-hidden flex flex-col">
+          <DiagramPanel />
+        </div>
+      )}
+
       {/* Code content */}
-      {activeTabDef && files[activeTabDef.filename] && (
+      {activeTabDef2?.id !== 'diagram' && activeTabDef2 && files[activeTabDef2.filename] && (
         <CodeBlock
-          key={activeTabDef.filename}
-          content={files[activeTabDef.filename]}
-          filename={activeTabDef.filename}
+          key={activeTabDef2.filename}
+          content={files[activeTabDef2.filename]}
+          filename={activeTabDef2.filename}
         />
       )}
 
