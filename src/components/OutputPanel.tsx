@@ -231,7 +231,7 @@ export function OutputPanel() {
             onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-1.5 px-3 py-2 text-xs whitespace-nowrap border-b-2 transition-colors ${
               activeTabDef?.id === tab.id
-                ? 'border-[#0078d4] text-[#0078d4] bg-gray-800/30'
+                ? 'border-[#2ea3f2] text-[#2ea3f2] bg-gray-800/30'
                 : 'border-transparent text-gray-500 hover:text-gray-300 hover:bg-gray-800/20'
             }`}
           >
@@ -257,7 +257,7 @@ export function OutputPanel() {
         </span>
         <button
           onClick={handleDownloadAll}
-          className="flex items-center gap-1.5 text-xs bg-[#0078d4] hover:bg-[#006cbf] text-white px-3 py-1.5 rounded-md transition-colors"
+          className="flex items-center gap-1.5 text-xs bg-[#2ea3f2] hover:bg-[#1a8fd1] text-white px-3 py-1.5 rounded-md transition-colors"
         >
           <Download size={12} />
           Download All Files

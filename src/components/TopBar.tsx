@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Cloud, Download, Settings, Rocket, FolderOpen, Save } from 'lucide-react';
+import { Download, Settings, Rocket, FolderOpen, Save } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { AZURE_REGIONS, ProjectConfig } from '../types/resources';
 import { generateAllFiles } from '../generators/bicep/mainBicep';
@@ -67,17 +67,20 @@ export function TopBar() {
   }
 
   return (
-    <header className="flex items-center gap-4 px-6 py-3 border-b border-gray-800 bg-[#0d1117] shrink-0">
+    <header className="flex items-center gap-4 px-6 py-3 border-b border-[#0b3c5d] bg-[#071525] shrink-0">
       {/* Logo */}
-      <div className="flex items-center gap-2 shrink-0">
-        <div className="w-8 h-8 rounded-lg bg-[#0078d4] flex items-center justify-center">
-          <Cloud size={18} className="text-white" />
-        </div>
-        <span className="text-lg font-bold text-white tracking-tight">InfraHelper</span>
-        <span className="text-xs text-gray-500 ml-1 hidden sm:block">Azure Bicep Generator</span>
+      <div className="flex items-center gap-3 shrink-0">
+        <img
+          src="https://interprit.com.au/wp-content/uploads/2025/06/interprit-white.svg"
+          alt="Interprit"
+          className="h-7 w-auto"
+        />
+        <div className="w-px h-5 bg-[#1a3a52]" />
+        <span className="text-sm font-semibold text-white tracking-tight">InfraHelper</span>
+        <span className="text-xs text-[#4a7090] hidden sm:block">Azure Bicep Generator</span>
       </div>
 
-      <div className="w-px h-6 bg-gray-700 hidden md:block" />
+      <div className="w-px h-6 bg-[#1a3a52] hidden md:block" />
 
       {/* Project Settings */}
       <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -90,7 +93,7 @@ export function TopBar() {
             value={project.projectName}
             onChange={(e) => handleChange('projectName', e.target.value)}
             placeholder="projectname"
-            className="bg-gray-800 border border-gray-700 rounded-md px-2 py-1 text-sm text-white focus:outline-none focus:border-[#0078d4] w-32"
+            className="bg-[#0f2840] border border-[#1a3a52] rounded-md px-2 py-1 text-sm text-white focus:outline-none focus:border-[#2ea3f2] w-32"
           />
         </div>
 
@@ -99,7 +102,7 @@ export function TopBar() {
           <select
             value={project.environment}
             onChange={(e) => handleChange('environment', e.target.value)}
-            className="bg-gray-800 border border-gray-700 rounded-md px-2 py-1 text-sm text-white focus:outline-none focus:border-[#0078d4]"
+            className="bg-[#0f2840] border border-[#1a3a52] rounded-md px-2 py-1 text-sm text-white focus:outline-none focus:border-[#2ea3f2]"
           >
             <option value="dev">dev</option>
             <option value="staging">staging</option>
@@ -112,7 +115,7 @@ export function TopBar() {
           <select
             value={project.location}
             onChange={(e) => handleChange('location', e.target.value)}
-            className="bg-gray-800 border border-gray-700 rounded-md px-2 py-1 text-sm text-white focus:outline-none focus:border-[#0078d4] w-36"
+            className="bg-[#0f2840] border border-[#1a3a52] rounded-md px-2 py-1 text-sm text-white focus:outline-none focus:border-[#2ea3f2] w-36"
           >
             {AZURE_REGIONS.map((r) => (
               <option key={r} value={r}>
@@ -129,7 +132,7 @@ export function TopBar() {
             value={project.resourceGroupName}
             onChange={(e) => setProjectConfig({ resourceGroupName: e.target.value })}
             placeholder="resource-group"
-            className="bg-gray-800 border border-gray-700 rounded-md px-2 py-1 text-sm text-white focus:outline-none focus:border-[#0078d4] w-48 min-w-0"
+            className="bg-[#0f2840] border border-[#1a3a52] rounded-md px-2 py-1 text-sm text-white focus:outline-none focus:border-[#2ea3f2] w-48 min-w-0"
           />
         </div>
       </div>
@@ -144,7 +147,7 @@ export function TopBar() {
             <button
               onClick={handleLoadFolder}
               title="Load project from folder"
-              className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+              className="flex items-center gap-2 bg-[#0f2840] hover:bg-[#1a3a52] border border-[#1a3a52] text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
             >
               <FolderOpen size={14} />
               <span className="hidden sm:block">Load</span>
@@ -153,7 +156,7 @@ export function TopBar() {
               onClick={handleSaveToFolder}
               disabled={project.resources.length === 0 || saving}
               title={dirHandle ? `Save to: ${dirHandle.name}` : 'Save to folder'}
-              className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+              className="flex items-center gap-2 bg-[#0f2840] hover:bg-[#1a3a52] border border-[#1a3a52] disabled:bg-[#0f2840] disabled:text-gray-600 disabled:cursor-not-allowed text-white px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
             >
               <Save size={14} className={saveStatus === 'saved' ? 'text-green-400' : saveStatus === 'error' ? 'text-red-400' : ''} />
               <span className="hidden sm:block">
@@ -165,7 +168,7 @@ export function TopBar() {
         <button
           onClick={handleDownloadAll}
           disabled={project.resources.length === 0}
-          className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 disabled:bg-gray-800 disabled:text-gray-600 disabled:cursor-not-allowed text-white px-4 py-1.5 rounded-md text-sm font-medium transition-colors"
+          className="flex items-center gap-2 bg-[#0f2840] hover:bg-[#1a3a52] border border-[#1a3a52] disabled:bg-[#0f2840] disabled:text-gray-600 disabled:cursor-not-allowed text-white px-4 py-1.5 rounded-md text-sm font-medium transition-colors"
         >
           <Download size={14} />
           <span className="hidden sm:block">Download All</span>
@@ -173,7 +176,7 @@ export function TopBar() {
         <button
           onClick={() => setShowDeploy(true)}
           disabled={project.resources.length === 0}
-          className="flex items-center gap-2 bg-[#0078d4] hover:bg-[#006cbf] disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed text-white px-4 py-1.5 rounded-md text-sm font-medium transition-colors"
+          className="flex items-center gap-2 bg-[#2ea3f2] hover:bg-[#1a8fd1] disabled:bg-[#1a3a52] disabled:text-gray-500 disabled:cursor-not-allowed text-white px-4 py-1.5 rounded-md text-sm font-medium transition-colors"
         >
           <Rocket size={14} />
           <span className="hidden sm:block">Deploy</span>

@@ -124,7 +124,7 @@ export function ResourceCard({ resource, isSelected }: ResourceCardProps) {
               value={resource.name}
               onChange={handleNameChange}
               onClick={(e) => e.stopPropagation()}
-              className="bg-transparent text-sm font-medium text-white focus:outline-none focus:ring-1 focus:ring-[#0078d4] rounded px-1 -mx-1 w-full max-w-[160px]"
+              className="bg-transparent text-sm font-medium text-white focus:outline-none focus:ring-1 focus:ring-[#2ea3f2] rounded px-1 -mx-1 w-full max-w-[160px]"
             />
           </div>
           <div className="text-xs text-gray-500 mt-0.5">{TYPE_LABELS[resource.type]}</div>

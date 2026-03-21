@@ -33,7 +33,7 @@ function Select({
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className={`w-full bg-gray-800 border border-gray-700 rounded-md px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#0078d4] ${className}`}
+      className={`w-full bg-gray-800 border border-gray-700 rounded-md px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#2ea3f2] ${className}`}
     >
       {children}
     </select>
@@ -82,7 +82,7 @@ function NumberInput({
         min={min}
         max={max}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full bg-gray-800 border border-gray-700 rounded-md px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#0078d4]"
+        className="w-full bg-gray-800 border border-gray-700 rounded-md px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#2ea3f2]"
       />
     </div>
   );
@@ -125,7 +125,7 @@ function EnvVarsEditor({
           </button>
           <button
             onClick={addRow}
-            className="flex items-center gap-1 text-xs text-[#0078d4] hover:text-blue-300 transition-colors"
+            className="flex items-center gap-1 text-xs text-[#2ea3f2] hover:text-blue-300 transition-colors"
           >
             <Plus size={12} /> Add
           </button>
@@ -144,14 +144,14 @@ function EnvVarsEditor({
                 value={ev.key}
                 onChange={(e) => updateRow(i, { key: e.target.value })}
                 placeholder="KEY"
-                className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white font-mono focus:outline-none focus:border-[#0078d4]"
+                className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white font-mono focus:outline-none focus:border-[#2ea3f2]"
               />
               <input
                 type={showValues ? 'text' : 'password'}
                 value={ev.value}
                 onChange={(e) => updateRow(i, { value: e.target.value })}
                 placeholder={ev.isSecret ? '(secret ref)' : 'value'}
-                className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white font-mono focus:outline-none focus:border-[#0078d4]"
+                className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white font-mono focus:outline-none focus:border-[#2ea3f2]"
               />
               <button
                 onClick={() => updateRow(i, { isSecret: !ev.isSecret })}
@@ -232,7 +232,7 @@ function IpAccessToggle({
             value={state.project.allowedIpAddress}
             onChange={(e) => setProjectConfig({ allowedIpAddress: e.target.value })}
             placeholder="x.x.x.x"
-            className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white font-mono focus:outline-none focus:border-[#0078d4]"
+            className="flex-1 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white font-mono focus:outline-none focus:border-[#2ea3f2]"
           />
           <button
             onClick={detectIp}
@@ -652,7 +652,7 @@ function StorageAccountConfigurator({
             onChange={(e) => setNewContainer(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && addContainer()}
             placeholder="container-name"
-            className="flex-1 bg-gray-800 border border-gray-700 rounded-md px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#0078d4] font-mono"
+            className="flex-1 bg-gray-800 border border-gray-700 rounded-md px-2 py-1.5 text-sm text-white focus:outline-none focus:border-[#2ea3f2] font-mono"
           />
           <button
             onClick={addContainer}
@@ -761,7 +761,7 @@ function KeyVaultConfigurator({
                   type="checkbox"
                   checked={config.accessPolicies.includes(r.id)}
                   onChange={() => toggleAccess(r.id)}
-                  className="w-3.5 h-3.5 rounded accent-[#0078d4]"
+                  className="w-3.5 h-3.5 rounded accent-[#2ea3f2]"
                 />
                 <span className="text-sm text-gray-300 group-hover:text-white transition-colors">
                   {r.name}

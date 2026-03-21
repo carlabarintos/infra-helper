@@ -7,9 +7,12 @@ export default {
   theme: {
     extend: {
       colors: {
-        'azure-blue': '#0078d4',
-        'surface': '#111827',
-        'card': '#1f2937',
+        'brand': '#2ea3f2',
+        'brand-hover': '#1a8fd1',
+        'brand-navy': '#0b3c5d',
+        'brand-teal': '#2fd5c7',
+        'surface': '#0b1e30',
+        'card': '#0f2840',
       },
     },
   },

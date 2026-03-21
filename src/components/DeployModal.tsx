@@ -42,7 +42,7 @@ function Step({
   return (
     <div className="space-y-1.5">
       <div className="flex items-center gap-2">
-        <span className="w-5 h-5 rounded-full bg-[#0078d4] text-white text-xs flex items-center justify-center font-bold shrink-0">
+        <span className="w-5 h-5 rounded-full bg-[#2ea3f2] text-white text-xs flex items-center justify-center font-bold shrink-0">
           {number}
         </span>
         <span className="text-sm font-medium text-gray-200">{title}</span>
@@ -81,7 +81,7 @@ export function DeployModal({ project, onClose }: DeployModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700 shrink-0">
           <div className="flex items-center gap-2">
-            <Terminal size={18} className="text-[#0078d4]" />
+            <Terminal size={18} className="text-[#2ea3f2]" />
             <span className="text-white font-semibold">Deploy to Azure</span>
           </div>
           <button onClick={onClose} className="text-gray-500 hover:text-white transition-colors">
@@ -98,7 +98,7 @@ export function DeployModal({ project, onClose }: DeployModalProps) {
               value={subscriptionId}
               onChange={(e) => setSubscriptionId(e.target.value)}
               placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-              className="flex-1 min-w-0 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white font-mono focus:outline-none focus:border-[#0078d4]"
+              className="flex-1 min-w-0 bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white font-mono focus:outline-none focus:border-[#2ea3f2]"
             />
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -106,7 +106,7 @@ export function DeployModal({ project, onClose }: DeployModalProps) {
             <select
               value={environment}
               onChange={(e) => setEnvironment(e.target.value as 'dev' | 'staging' | 'prod')}
-              className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#0078d4]"
+              className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-[#2ea3f2]"
             >
               <option value="dev">dev</option>
               <option value="staging">staging</option>
@@ -123,7 +123,7 @@ export function DeployModal({ project, onClose }: DeployModalProps) {
               onClick={() => setActiveTab(t)}
               className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${
                 activeTab === t
-                  ? 'bg-[#0078d4] text-white'
+                  ? 'bg-[#2ea3f2] text-white'
                   : 'text-gray-400 hover:text-white hover:bg-gray-800'
               }`}
             >
