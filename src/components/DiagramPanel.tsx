@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useStore } from '../store/useStore';
 import { Resource, ResourceType } from '../types/resources';
 
@@ -7,7 +7,8 @@ const NODE_H = 62;
 const ROW_GAP = 24;
 const PADDING_Y = 52;
 const COL_X = [40, 260, 480, 700];
-const CANVAS_W = 900;
+const CANVAS_W = 920;
+const CANVAS_MIN_H = 400;
 
 const TYPE_COL: Record<ResourceType, number> = {
   appServicePlan: 0,
@@ -42,35 +43,40 @@ interface NodePos {
   resource: Resource;
   x: number;
   y: number;
-  col: number;
 }
 
 interface Edge {
-  from: NodePos;
-  to: NodePos;
+  fromId: string;
+  toId: string;
   label: string;
   color: string;
 }
 
-function buildEdgePath(from: NodePos, to: NodePos): string {
-  const goRight = from.col <= to.col;
-  const sx = goRight ? from.x + NODE_W : from.x;
-  const sy = from.y + NODE_H / 2;
-  const tx = goRight ? to.x : to.x + NODE_W;
-  const ty = to.y + NODE_H / 2;
-  const dx = Math.abs(tx - sx) * 0.45;
+type PosMap = Record<string, { x: number; y: number }>;
+
+function buildPath(px: PosMap, fromId: string, toId: string): string {
+  const f = px[fromId];
+  const t = px[toId];
+  if (!f || !t) return '';
+  const sy = f.y + NODE_H / 2;
+  const ty = t.y + NODE_H / 2;
+  const goRight = t.x >= f.x;
+  const sx = goRight ? f.x + NODE_W : f.x;
+  const tx = goRight ? t.x : t.x + NODE_W;
+  const dx = Math.abs(tx - sx) * 0.5;
   const c1x = goRight ? sx + dx : sx - dx;
   const c2x = goRight ? tx - dx : tx + dx;
   return `M ${sx} ${sy} C ${c1x} ${sy}, ${c2x} ${ty}, ${tx} ${ty}`;
 }
 
-function edgeMidpoint(from: NodePos, to: NodePos): [number, number] {
-  const goRight = from.col <= to.col;
-  const sx = goRight ? from.x + NODE_W : from.x;
-  const sy = from.y + NODE_H / 2;
-  const tx = goRight ? to.x : to.x + NODE_W;
-  const ty = to.y + NODE_H / 2;
-  return [(sx + tx) / 2, (sy + ty) / 2];
+function midpoint(px: PosMap, fromId: string, toId: string): [number, number] {
+  const f = px[fromId];
+  const t = px[toId];
+  if (!f || !t) return [0, 0];
+  const goRight = t.x >= f.x;
+  const sx = goRight ? f.x + NODE_W : f.x;
+  const tx = goRight ? t.x : t.x + NODE_W;
+  return [(sx + tx) / 2, (f.y + t.y) / 2 + NODE_H / 2];
 }
 
 export function DiagramPanel() {
@@ -78,9 +84,11 @@ export function DiagramPanel() {
   const { project } = state;
   const { resources, enableNetworking } = project;
 
-  const { nodes, edges, canvasHeight, vnetBox } = useMemo(() => {
+  // Computed base layout
+  const { nodes, edges, basePositions, canvasHeight, peIds } = useMemo(() => {
     const colCounts = [0, 0, 0, 0];
     const nodeList: NodePos[] = [];
+    const byId = new Map<string, NodePos>();
     const byName = new Map<string, NodePos>();
 
     for (const resource of resources) {
@@ -90,59 +98,122 @@ export function DiagramPanel() {
         resource,
         x: COL_X[col],
         y: PADDING_Y + row * (NODE_H + ROW_GAP),
-        col,
       };
       nodeList.push(pos);
+      byId.set(resource.id, pos);
       byName.set(resource.name, pos);
     }
 
-    const canvasH =
-      Math.max(...colCounts, 1) * (NODE_H + ROW_GAP) - ROW_GAP + PADDING_Y * 2;
+    const canvasH = Math.max(
+      CANVAS_MIN_H,
+      Math.max(...colCounts, 1) * (NODE_H + ROW_GAP) - ROW_GAP + PADDING_Y * 2
+    );
+
+    const firstOfType = new Map<ResourceType, NodePos>();
+    for (const n of nodeList) {
+      if (!firstOfType.has(n.resource.type)) firstOfType.set(n.resource.type, n);
+    }
 
     const edgeList: Edge[] = [];
+    const edgeSet = new Set<string>();
+
+    function pushEdge(from: NodePos, to: NodePos, label: string) {
+      const key = `${from.resource.id}→${to.resource.id}`;
+      if (edgeSet.has(key) || from === to) return;
+      edgeSet.add(key);
+      edgeList.push({
+        fromId: from.resource.id,
+        toId: to.resource.id,
+        label,
+        color: TYPE_COLORS[to.resource.type]?.border ?? '#4a7090',
+      });
+    }
+
     for (const node of nodeList) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const cfg = node.resource.config as any;
 
-      const addEdge = (refName: string | undefined, label: string) => {
-        if (!refName) return;
-        const target = byName.get(refName);
-        if (!target) return;
-        edgeList.push({
-          from: node,
-          to: target,
-          label,
-          color: TYPE_COLORS[target.resource.type]?.border ?? '#4a7090',
-        });
-      };
+      function resolve(refId: string | undefined, fallback: ResourceType): NodePos | undefined {
+        if (refId) return byId.get(refId);
+        return firstOfType.get(fallback);
+      }
 
       if (node.resource.type === 'functionApp') {
-        addEdge(cfg.sharedPlanRef, 'plan');
-        addEdge(cfg.storageAccountRef, 'storage');
-        addEdge(cfg.appInsightsRef, 'monitor');
+        const plan    = cfg.sharedPlanRef    ? byId.get(cfg.sharedPlanRef)    : undefined;
+        const storage = resolve(cfg.storageAccountRef, 'storageAccount');
+        const ai      = resolve(cfg.appInsightsRef,    'appInsights');
+        if (plan)    pushEdge(node, plan,    'plan');
+        if (storage) pushEdge(node, storage, 'storage');
+        if (ai)      pushEdge(node, ai,      'monitor');
       } else if (node.resource.type === 'appService') {
-        addEdge(cfg.sharedPlanRef, 'plan');
-        addEdge(cfg.appInsightsRef, 'monitor');
+        const plan = cfg.sharedPlanRef ? byId.get(cfg.sharedPlanRef) : undefined;
+        const ai   = resolve(cfg.appInsightsRef, 'appInsights');
+        if (plan) pushEdge(node, plan, 'plan');
+        if (ai)   pushEdge(node, ai,  'monitor');
+      } else if (node.resource.type === 'keyVault') {
+        (cfg.accessPolicies as string[] ?? []).forEach((id: string) => {
+          const source = byId.get(id);
+          if (source) pushEdge(source, node, 'secrets');
+        });
       }
     }
 
-    let vnetBoxResult: { x: number; y: number; w: number; h: number } | null = null;
-    if (enableNetworking) {
-      const peNodes = nodeList.filter(
-        (n) => (n.resource.config as any).enablePrivateEndpoint === true
-      );
-      if (peNodes.length > 0) {
-        const PAD = 18;
-        const minX = Math.min(...peNodes.map((n) => n.x)) - PAD;
-        const minY = Math.min(...peNodes.map((n) => n.y)) - PAD;
-        const maxX = Math.max(...peNodes.map((n) => n.x + NODE_W)) + PAD;
-        const maxY = Math.max(...peNodes.map((n) => n.y + NODE_H)) + PAD;
-        vnetBoxResult = { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
-      }
-    }
+    const base: PosMap = {};
+    for (const n of nodeList) base[n.resource.id] = { x: n.x, y: n.y };
 
-    return { nodes: nodeList, edges: edgeList, canvasHeight: canvasH, vnetBox: vnetBoxResult };
+    const peIdSet = new Set(
+      enableNetworking
+        ? nodeList
+            .filter((n) => (n.resource.config as any).enablePrivateEndpoint === true)
+            .map((n) => n.resource.id)
+        : []
+    );
+
+    return { nodes: nodeList, edges: edgeList, basePositions: base, canvasHeight: canvasH, peIds: peIdSet };
   }, [resources, enableNetworking]);
+
+  // Draggable position overrides — reset when resource set changes
+  const [posOverrides, setPosOverrides] = useState<PosMap>({});
+  const resourceKey = resources.map((r) => r.id).join(',');
+  const prevKey = useRef('');
+  useEffect(() => {
+    if (prevKey.current !== resourceKey) {
+      prevKey.current = resourceKey;
+      setPosOverrides({});
+    }
+  }, [resourceKey]);
+
+  // Merge base positions with overrides
+  const positions: PosMap = { ...basePositions, ...posOverrides };
+
+  // Drag state
+  const dragging = useRef<string | null>(null);
+  const dragStart = useRef({ mx: 0, my: 0, nx: 0, ny: 0 });
+
+  function handleNodeMouseDown(e: React.MouseEvent, id: string) {
+    e.preventDefault();
+    const pos = positions[id];
+    dragging.current = id;
+    dragStart.current = { mx: e.clientX, my: e.clientY, nx: pos.x, ny: pos.y };
+
+    function onMove(ev: MouseEvent) {
+      if (!dragging.current) return;
+      setPosOverrides((prev) => ({
+        ...prev,
+        [dragging.current!]: {
+          x: dragStart.current.nx + ev.clientX - dragStart.current.mx,
+          y: dragStart.current.ny + ev.clientY - dragStart.current.my,
+        },
+      }));
+    }
+    function onUp() {
+      dragging.current = null;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
 
   if (resources.length === 0) {
     return (
@@ -174,7 +245,7 @@ export function DiagramPanel() {
 
       {/* Canvas */}
       <div className="relative" style={{ width: CANVAS_W, height: canvasHeight }}>
-        {/* SVG layer */}
+        {/* SVG layer for edges + PE indicators */}
         <svg
           className="absolute inset-0 pointer-events-none"
           width={CANVAS_W}
@@ -197,41 +268,47 @@ export function DiagramPanel() {
             ))}
           </defs>
 
-          {/* VNet box */}
-          {vnetBox && (
-            <>
-              <rect
-                x={vnetBox.x}
-                y={vnetBox.y}
-                width={vnetBox.w}
-                height={vnetBox.h}
-                fill="rgba(46,163,242,0.04)"
-                stroke="#2ea3f2"
-                strokeWidth="1.5"
-                strokeDasharray="6 4"
-                rx="10"
-              />
-              <text
-                x={vnetBox.x + 10}
-                y={vnetBox.y - 7}
-                fill="#2ea3f2"
-                fontSize="11"
-                fontFamily="Montserrat, sans-serif"
-                fontWeight="600"
-                opacity="0.8"
-              >
-                VNet
-              </text>
-            </>
-          )}
+          {/* Per-node PE indicators */}
+          {nodes
+            .filter((n) => peIds.has(n.resource.id))
+            .map((n) => {
+              const pos = positions[n.resource.id];
+              return (
+                <g key={`pe-${n.resource.id}`}>
+                  <rect
+                    x={pos.x - 6}
+                    y={pos.y - 6}
+                    width={NODE_W + 12}
+                    height={NODE_H + 12}
+                    fill="rgba(46,163,242,0.05)"
+                    stroke="#2ea3f2"
+                    strokeWidth="1.5"
+                    strokeDasharray="5 3"
+                    rx="10"
+                  />
+                  <text
+                    x={pos.x + NODE_W + 8}
+                    y={pos.y + 10}
+                    fill="#2ea3f2"
+                    fontSize="9"
+                    fontFamily="Montserrat, sans-serif"
+                    fontWeight="600"
+                    opacity="0.75"
+                  >
+                    PE
+                  </text>
+                </g>
+              );
+            })}
 
           {/* Edges */}
           {edges.map((edge, i) => {
-            const [mx, my] = edgeMidpoint(edge.from, edge.to);
+            const d = buildPath(positions, edge.fromId, edge.toId);
+            const [mx, my] = midpoint(positions, edge.fromId, edge.toId);
             return (
               <g key={i}>
                 <path
-                  d={buildEdgePath(edge.from, edge.to)}
+                  d={d}
                   stroke={edge.color}
                   strokeWidth="1.5"
                   strokeOpacity="0.55"
@@ -257,19 +334,23 @@ export function DiagramPanel() {
         {/* Node cards */}
         {nodes.map((node) => {
           const c = TYPE_COLORS[node.resource.type];
+          const pos = positions[node.resource.id];
           return (
             <div
               key={node.resource.id}
               className="absolute rounded-lg flex items-center gap-2.5 px-3 select-none"
               style={{
-                left: node.x,
-                top: node.y,
+                left: pos.x,
+                top: pos.y,
                 width: NODE_W,
                 height: NODE_H,
                 backgroundColor: c.bg,
                 border: `1px solid ${c.border}`,
                 borderLeft: `3px solid ${c.border}`,
+                cursor: 'grab',
+                zIndex: dragging.current === node.resource.id ? 10 : 1,
               }}
+              onMouseDown={(e) => handleNodeMouseDown(e, node.resource.id)}
             >
               <div
                 className="shrink-0 w-8 h-8 rounded flex items-center justify-center text-xs font-bold"
@@ -307,12 +388,13 @@ export function DiagramPanel() {
               <span className="text-xs text-gray-500">{TYPE_LABELS[type]}</span>
             </div>
           ))}
-        {enableNetworking && (
+        {peIds.size > 0 && (
           <div className="flex items-center gap-1.5">
             <div className="w-2.5 h-2.5 rounded-sm border border-dashed border-[#2ea3f2]" />
-            <span className="text-xs text-gray-500">VNet boundary</span>
+            <span className="text-xs text-gray-500">Private Endpoint (VNet)</span>
           </div>
         )}
+        <div className="ml-auto text-xs text-[#4a7090] italic">drag nodes to rearrange</div>
       </div>
     </div>
   );

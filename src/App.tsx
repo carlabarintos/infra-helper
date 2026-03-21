@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react';
 import { TopBar } from './components/TopBar';
 import { ResourcePalette } from './components/ResourcePalette';
 import { NetworkingToggle } from './components/NetworkingToggle';
@@ -11,6 +12,30 @@ export function App() {
   const { state } = useStore();
   const { project, selectedResourceId } = state;
   const selectedResource = project.resources.find((r) => r.id === selectedResourceId);
+
+  const [rightWidth, setRightWidth] = useState(420);
+  const dragging = useRef(false);
+  const dragStartX = useRef(0);
+  const dragStartW = useRef(0);
+
+  function handleResizeStart(e: React.MouseEvent) {
+    dragging.current = true;
+    dragStartX.current = e.clientX;
+    dragStartW.current = rightWidth;
+
+    function onMove(e: MouseEvent) {
+      if (!dragging.current) return;
+      const delta = dragStartX.current - e.clientX;
+      setRightWidth(Math.max(300, Math.min(900, dragStartW.current + delta)));
+    }
+    function onUp() {
+      dragging.current = false;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  }
 
   return (
     <div className="flex flex-col h-screen bg-[#0a0a0f] overflow-hidden">
@@ -71,8 +96,17 @@ export function App() {
           </div>
         </main>
 
+        {/* Drag handle */}
+        <div
+          className="w-1 shrink-0 cursor-col-resize hover:bg-[#2ea3f2] transition-colors group relative"
+          style={{ background: 'transparent' }}
+          onMouseDown={handleResizeStart}
+        >
+          <div className="absolute inset-y-0 -left-1 -right-1" />
+        </div>
+
         {/* Right panel — Output */}
-        <aside className="w-[420px] shrink-0 flex flex-col bg-[#0d1117]">
+        <aside className="shrink-0 flex flex-col bg-[#0d1117]" style={{ width: rightWidth }}>
           <div className="flex items-center px-4 py-2.5 border-b border-gray-800 shrink-0">
             <span className="text-sm font-medium text-gray-300">Generated Files</span>
           </div>
