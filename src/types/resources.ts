@@ -80,6 +80,7 @@ export interface ProjectConfig {
   allowedIpAddress: string;
   resourceGroupName: string;
   resources: Resource[];
+  diagramPositions?: Record<string, { x: number; y: number }>;
 }
 
 export const AZURE_REGIONS = [
