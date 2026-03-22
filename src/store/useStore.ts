@@ -131,7 +131,7 @@ const initialState: StoreState = {
   project: {
     projectName: 'myproject',
     environment: 'dev',
-    location: 'eastus',
+    location: 'australiaeast',
     enableNetworking: false,
     allowedIpAddress: '',
     resourceGroupName: 'myproject-dev-rg',
