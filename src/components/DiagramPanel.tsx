@@ -199,6 +199,10 @@ export function DiagramPanel() {
           const source = byId.get(id);
           if (source) pushEdge(source, node, 'secrets');
         });
+        const diagStorage = cfg.diagnosticStorageAccountRef ? byId.get(cfg.diagnosticStorageAccountRef) : undefined;
+        const diagWorkspace = cfg.diagnosticWorkspaceRef ? byId.get(cfg.diagnosticWorkspaceRef) : undefined;
+        if (diagStorage) pushEdge(node, diagStorage, 'diag');
+        if (diagWorkspace) pushEdge(node, diagWorkspace, 'diag');
       }
     }
 
