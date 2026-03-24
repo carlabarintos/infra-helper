@@ -222,7 +222,8 @@ export function OutputPanel() {
 
   function handleLangChange(lang: OutputLang) {
     setOutputLang(lang);
-    setActiveTab('diagram');
+    const newTabs = lang === 'terraform' ? tfTabs : bicepTabs;
+    setActiveTab(newTabs.length > 0 ? newTabs[0].id : 'diagram');
   }
 
   function handleDownloadAll() {
