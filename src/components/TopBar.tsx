@@ -3,21 +3,26 @@ import { Download, Settings, Rocket, FolderOpen, Save } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { AZURE_REGIONS, ProjectConfig } from '../types/resources';
 import { generateAllFiles } from '../generators/bicep/mainBicep';
+import { generateTerraformFiles } from '../generators/terraform/mainTf';
 import { downloadAsZip } from '../utils/download';
 import { DeployModal } from './DeployModal';
 import { isFileSystemAccessSupported, pickFolder, readProjectFromFolder, saveFilesToFolder } from '../utils/fileSystem';
 
 export function TopBar() {
   const { state, setProjectConfig, loadProject } = useStore();
-  const { project } = state;
+  const { project, outputLang } = state;
   const [showDeploy, setShowDeploy] = useState(false);
   const [dirHandle, setDirHandle] = useState<any>(null);
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved' | 'error'>('idle');
 
+  function getFiles() {
+    return outputLang === 'terraform' ? generateTerraformFiles(project) : generateAllFiles(project);
+  }
+
   function handleDownloadAll() {
-    const files = generateAllFiles(project);
-    const zipName = `${project.projectName || 'infra'}-${project.environment}.zip`;
+    const files = getFiles();
+    const zipName = `${project.projectName || 'infra'}-${project.environment}-${outputLang}.zip`;
     downloadAsZip(files, zipName);
   }
 
@@ -55,7 +60,7 @@ export function TopBar() {
     setSaving(true);
     setSaveStatus('idle');
     try {
-      const files = generateAllFiles(project);
+      const files = getFiles();
       await saveFilesToFolder(dir, files);
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus('idle'), 3000);
@@ -77,7 +82,9 @@ export function TopBar() {
         />
         <div className="w-px h-5 bg-[#1a3a52]" />
         <span className="text-sm font-semibold text-white tracking-tight">InfraHelper</span>
-        <span className="text-xs text-[#4a7090] hidden sm:block">Azure Bicep Generator</span>
+        <span className="text-xs text-[#4a7090] hidden sm:block">
+          Azure {outputLang === 'terraform' ? 'Terraform' : 'Bicep'} Generator
+        </span>
       </div>
 
       <div className="w-px h-6 bg-[#1a3a52] hidden md:block" />

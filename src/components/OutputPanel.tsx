@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Copy, Download, Check, FileCode, GitBranch, Settings2, Network } from 'lucide-react';
-import { useStore } from '../store/useStore';
+import { useStore, OutputLang } from '../store/useStore';
 import { generateAllFiles } from '../generators/bicep/mainBicep';
 import { generateTerraformFiles } from '../generators/terraform/mainTf';
 import { downloadFile, copyToClipboard } from '../utils/download';
@@ -148,13 +148,10 @@ function CodeBlock({ content, filename }: { content: string; filename: string })
 
 // ─── Output Panel ─────────────────────────────────────────────────────────────
 
-type OutputLang = 'bicep' | 'terraform';
-
 export function OutputPanel() {
-  const { state } = useStore();
-  const { project } = state;
+  const { state, setOutputLang } = useStore();
+  const { project, outputLang } = state;
   const [activeTab, setActiveTab] = useState<string>('diagram');
-  const [outputLang, setOutputLang] = useState<OutputLang>('bicep');
 
   const bicepFiles = useMemo(() => generateAllFiles(project), [project]);
   const tfFiles = useMemo(() => generateTerraformFiles(project), [project]);
@@ -225,6 +222,7 @@ export function OutputPanel() {
     const newTabs = lang === 'terraform' ? tfTabs : bicepTabs;
     setActiveTab(newTabs.length > 0 ? newTabs[0].id : 'diagram');
   }
+
 
   function handleDownloadAll() {
     Object.entries(files).forEach(([filename, content], i) => {

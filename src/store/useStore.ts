@@ -7,9 +7,12 @@ import {
   ResourceConfig,
 } from '../types/resources';
 
+export type OutputLang = 'bicep' | 'terraform';
+
 interface StoreState {
   project: ProjectConfig;
   selectedResourceId: string | null;
+  outputLang: OutputLang;
 }
 
 type Action =
@@ -20,7 +23,8 @@ type Action =
   | { type: 'SET_PROJECT_CONFIG'; config: Partial<ProjectConfig> }
   | { type: 'SELECT_RESOURCE'; id: string | null }
   | { type: 'LOAD_PROJECT'; project: ProjectConfig }
-  | { type: 'UPDATE_DIAGRAM_POSITIONS'; positions: Record<string, { x: number; y: number }> };
+  | { type: 'UPDATE_DIAGRAM_POSITIONS'; positions: Record<string, { x: number; y: number }> }
+  | { type: 'SET_OUTPUT_LANG'; lang: OutputLang };
 
 function generateName(type: ResourceType, existing: Resource[]): string {
   const prefixes: Record<ResourceType, string> = {
@@ -122,6 +126,10 @@ function reducer(state: StoreState, action: Action): StoreState {
       };
     }
 
+    case 'SET_OUTPUT_LANG': {
+      return { ...state, outputLang: action.lang };
+    }
+
     default:
       return state;
   }
@@ -138,6 +146,7 @@ const initialState: StoreState = {
     resources: [],
   },
   selectedResourceId: null,
+  outputLang: 'bicep',
 };
 
 interface StoreContextValue {
@@ -150,6 +159,7 @@ interface StoreContextValue {
   selectResource: (id: string | null) => void;
   loadProject: (project: ProjectConfig) => void;
   updateDiagramPositions: (positions: Record<string, { x: number; y: number }>) => void;
+  setOutputLang: (lang: OutputLang) => void;
 }
 
 const StoreContext = createContext<StoreContextValue | null>(null);
@@ -169,6 +179,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     loadProject: (project) => dispatch({ type: 'LOAD_PROJECT', project }),
     updateDiagramPositions: (positions) =>
       dispatch({ type: 'UPDATE_DIAGRAM_POSITIONS', positions }),
+    setOutputLang: (lang) => dispatch({ type: 'SET_OUTPUT_LANG', lang }),
   };
 
   return createElement(StoreContext.Provider, { value }, children);
