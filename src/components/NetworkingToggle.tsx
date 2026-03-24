@@ -1,12 +1,37 @@
 import { Shield, ShieldOff } from 'lucide-react';
 import { useStore } from '../store/useStore';
 
-export function NetworkingToggle() {
+interface NetworkingToggleProps {
+  variant?: 'sidebar' | 'inline';
+}
+
+export function NetworkingToggle({ variant = 'sidebar' }: NetworkingToggleProps) {
   const { state, setProjectConfig } = useStore();
   const { enableNetworking } = state.project;
 
   function handleToggle() {
     setProjectConfig({ enableNetworking: !enableNetworking });
+  }
+
+  if (variant === 'inline') {
+    return (
+      <button
+        onClick={handleToggle}
+        title={enableNetworking ? 'Private Network: ON — click to disable' : 'Private Network: OFF — click to enable'}
+        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border text-xs font-medium transition-all ${
+          enableNetworking
+            ? 'border-blue-500/50 bg-blue-950/40 text-blue-300 hover:bg-blue-950/60'
+            : 'border-gray-700 bg-gray-800/30 text-gray-500 hover:border-gray-600 hover:text-gray-300'
+        }`}
+      >
+        {enableNetworking ? <Shield size={13} /> : <ShieldOff size={13} />}
+        <span>Private Network</span>
+        <label className="toggle-switch ml-1" onClick={(e) => e.stopPropagation()}>
+          <input type="checkbox" checked={enableNetworking} onChange={handleToggle} />
+          <span className="toggle-slider" />
+        </label>
+      </button>
+    );
   }
 
   return (

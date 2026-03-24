@@ -14,6 +14,7 @@ export function App() {
   const selectedResource = project.resources.find((r) => r.id === selectedResourceId);
 
   const [rightWidth, setRightWidth] = useState(420);
+  const [paletteCompact, setPaletteCompact] = useState(false);
   const dragging = useRef(false);
   const dragStartX = useRef(0);
   const dragStartW = useRef(0);
@@ -43,11 +44,15 @@ export function App() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left sidebar */}
-        <aside className="w-[280px] shrink-0 flex flex-col border-r border-gray-800 bg-[#0d1117] overflow-y-auto">
-          <div className="p-4 space-y-5">
-            <ResourcePalette />
-            <div className="h-px bg-gray-800" />
-            <NetworkingToggle />
+        <aside
+          className="shrink-0 flex flex-col border-r border-gray-800 bg-[#0d1117] overflow-y-auto transition-all duration-200"
+          style={{ width: paletteCompact ? 60 : 280 }}
+        >
+          <div className={`p-4 ${paletteCompact ? 'px-2.5' : ''}`}>
+            <ResourcePalette
+              compact={paletteCompact}
+              onToggleCompact={() => setPaletteCompact((v) => !v)}
+            />
           </div>
         </aside>
 
@@ -63,6 +68,7 @@ export function App() {
                 </span>
               )}
             </div>
+            <NetworkingToggle variant="inline" />
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">

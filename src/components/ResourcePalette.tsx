@@ -1,4 +1,4 @@
-import { Zap, Globe, HardDrive, Key, BarChart2, Plus, Server } from 'lucide-react';
+import { Zap, Globe, HardDrive, Key, BarChart2, Plus, Server, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { ResourceType } from '../types/resources';
 
@@ -69,32 +69,64 @@ const PALETTE_ITEMS: PaletteItem[] = [
   },
 ];
 
-export function ResourcePalette() {
+interface ResourcePaletteProps {
+  compact: boolean;
+  onToggleCompact: () => void;
+}
+
+export function ResourcePalette({ compact, onToggleCompact }: ResourcePaletteProps) {
   const { addResource } = useStore();
 
   return (
     <div>
-      <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-        Resources
+      <div className="flex items-center justify-between mb-3">
+        {!compact && (
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+            Resources
+          </span>
+        )}
+        <button
+          onClick={onToggleCompact}
+          title={compact ? 'Expand palette' : 'Collapse to icons'}
+          className={`text-gray-500 hover:text-gray-300 transition-colors ${compact ? 'mx-auto' : 'ml-auto'}`}
+        >
+          {compact ? <PanelLeftOpen size={14} /> : <PanelLeftClose size={14} />}
+        </button>
       </div>
-      <div className="space-y-1.5">
-        {PALETTE_ITEMS.map((item) => (
-          <button
-            key={item.type}
-            onClick={() => addResource(item.type)}
-            className={`w-full flex items-center gap-3 p-2.5 rounded-lg border ${item.borderColor} ${item.bgColor} bg-opacity-50 transition-all group`}
-          >
-            <span className={item.color}>{item.icon}</span>
-            <div className="flex-1 text-left min-w-0">
-              <div className="text-sm font-medium text-white">{item.label}</div>
-              <div className="text-xs text-gray-500">{item.description}</div>
-            </div>
-            <span className={`${item.color} opacity-0 group-hover:opacity-100 transition-opacity`}>
-              <Plus size={14} />
-            </span>
-          </button>
-        ))}
-      </div>
+
+      {compact ? (
+        <div className="flex flex-col items-center gap-1.5">
+          {PALETTE_ITEMS.map((item) => (
+            <button
+              key={item.type}
+              onClick={() => addResource(item.type)}
+              title={item.label}
+              className={`w-9 h-9 flex items-center justify-center rounded-lg border ${item.borderColor} ${item.bgColor} transition-all`}
+            >
+              <span className={item.color}>{item.icon}</span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          {PALETTE_ITEMS.map((item) => (
+            <button
+              key={item.type}
+              onClick={() => addResource(item.type)}
+              className={`w-full flex items-center gap-3 p-2.5 rounded-lg border ${item.borderColor} ${item.bgColor} bg-opacity-50 transition-all group`}
+            >
+              <span className={item.color}>{item.icon}</span>
+              <div className="flex-1 text-left min-w-0">
+                <div className="text-sm font-medium text-white">{item.label}</div>
+                <div className="text-xs text-gray-500">{item.description}</div>
+              </div>
+              <span className={`${item.color} opacity-0 group-hover:opacity-100 transition-opacity`}>
+                <Plus size={14} />
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
