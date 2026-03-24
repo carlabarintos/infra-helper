@@ -36,6 +36,12 @@ param privateDnsZoneKeyVaultId string = ''
 @description('Tenant ID for the Key Vault')
 param tenantId string = subscription().tenantId
 
+@description('Storage Account resource ID for diagnostic settings (leave empty to skip)')
+param diagnosticStorageAccountId string = ''
+
+@description('Log Analytics Workspace resource ID for diagnostic settings (leave empty to skip)')
+param diagnosticWorkspaceId string = ''
+
 var keyVaultName = '\${projectName}-\${environment}-kv-${safeName}'
 // Key Vault names must be 3-24 chars
 var kvName = length(keyVaultName) > 24 ? substring(keyVaultName, 0, 24) : keyVaultName
@@ -110,11 +116,13 @@ resource privateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneG
   }
 }
 
-// Diagnostic settings for audit logging
-resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+// Diagnostic settings — only deployed when a storage account or workspace is linked
+resource diagnosticSettings 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = if (!empty(diagnosticStorageAccountId) || !empty(diagnosticWorkspaceId)) {
   name: '\${kvName}-diag'
   scope: keyVault
   properties: {
+    storageAccountId: !empty(diagnosticStorageAccountId) ? diagnosticStorageAccountId : null
+    workspaceId: !empty(diagnosticWorkspaceId) ? diagnosticWorkspaceId : null
     logs: [
       {
         category: 'AuditEvent'

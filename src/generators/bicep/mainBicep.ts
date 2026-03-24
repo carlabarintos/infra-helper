@@ -255,6 +255,8 @@ export function generateMainBicep(project: ProjectConfig): string {
     enableSoftDelete: ${config.enableSoftDelete}
     softDeleteRetentionDays: ${config.softDeleteRetentionDays}
     ${enableNetworking && config.enablePrivateEndpoint ? `subnetId: networking.outputs.peSubnetId\n    privateDnsZoneKeyVaultId: networking.outputs.privateDnsZoneKeyVaultId` : `subnetId: ''\n    privateDnsZoneKeyVaultId: ''`}
+    diagnosticStorageAccountId: ''
+    diagnosticWorkspaceId: ''
   }
 }`);
   });
