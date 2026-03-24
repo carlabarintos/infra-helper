@@ -195,13 +195,16 @@ export function OutputPanel() {
   }, [bicepFiles, project.resources]);
 
   const tfTabs: TabDef[] = useMemo(() => {
-    return Object.keys(tfFiles)
+    const tfOrder = [
+      'terraform/main.tf',
+      'terraform/variables.tf',
+      'terraform/outputs.tf',
+    ];
+    const tfCodeTabs = Object.keys(tfFiles)
       .filter((k) => k.endsWith('.tf') || k.endsWith('.tfvars'))
       .sort((a, b) => {
-        // main.tf first, then variables, outputs, then rest alphabetically
-        const order = ['terraform/main.tf', 'terraform/variables.tf', 'terraform/outputs.tf'];
-        const ai = order.indexOf(a);
-        const bi = order.indexOf(b);
+        const ai = tfOrder.indexOf(a);
+        const bi = tfOrder.indexOf(b);
         if (ai !== -1 && bi !== -1) return ai - bi;
         if (ai !== -1) return -1;
         if (bi !== -1) return 1;
@@ -213,6 +216,19 @@ export function OutputPanel() {
         filename: k,
         icon: <FileCode size={12} />,
       }));
+
+    const extras: TabDef[] = [];
+    if (tfFiles['.github/workflows/deploy-terraform.yml']) {
+      extras.push({ id: 'tf-github', label: 'GitHub Actions', filename: '.github/workflows/deploy-terraform.yml', icon: <GitBranch size={12} /> });
+    }
+    if (tfFiles['deploy-terraform.ps1']) {
+      extras.push({ id: 'tf-ps1', label: 'deploy.ps1', filename: 'deploy-terraform.ps1', icon: <Settings2 size={12} /> });
+    }
+    if (tfFiles['deploy-terraform.sh']) {
+      extras.push({ id: 'tf-sh', label: 'deploy.sh', filename: 'deploy-terraform.sh', icon: <Settings2 size={12} /> });
+    }
+
+    return [...tfCodeTabs, ...extras];
   }, [tfFiles]);
 
   const codeTabs = outputLang === 'terraform' ? tfTabs : bicepTabs;
