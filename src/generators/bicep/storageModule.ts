@@ -44,10 +44,8 @@ param subnetId string = ''
 @description('Private DNS Zone resource ID for blob storage')
 param privateDnsZoneBlobId string = ''
 
-var storageAccountName = '\${toLower(projectName)}\${toLower(environment)}${safeName}sa'
 // Storage account names must be 3-24 chars, lowercase alphanumeric only
-// Truncate to 24 chars to be safe
-var saName = length(storageAccountName) > 24 ? substring(storageAccountName, 0, 24) : storageAccountName
+var saName = length('${safeName}') > 24 ? substring('${safeName}', 0, 24) : '${safeName}'
 
 var tags = {
   environment: environment
