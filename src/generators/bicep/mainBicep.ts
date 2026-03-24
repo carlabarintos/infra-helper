@@ -255,8 +255,18 @@ export function generateMainBicep(project: ProjectConfig): string {
     enableSoftDelete: ${config.enableSoftDelete}
     softDeleteRetentionDays: ${config.softDeleteRetentionDays}
     ${enableNetworking && config.enablePrivateEndpoint ? `subnetId: networking.outputs.peSubnetId\n    privateDnsZoneKeyVaultId: networking.outputs.privateDnsZoneKeyVaultId` : `subnetId: ''\n    privateDnsZoneKeyVaultId: ''`}
-    diagnosticStorageAccountId: ''
-    diagnosticWorkspaceId: ''
+    diagnosticStorageAccountId: ${(() => {
+      const ref = config.diagnosticStorageAccountRef
+        ? resources.find((r) => r.id === config.diagnosticStorageAccountRef)
+        : undefined;
+      return ref ? `storageAccount${safeVarName(ref.name)}.outputs.storageAccountId` : `''`;
+    })()}
+    diagnosticWorkspaceId: ${(() => {
+      const ref = config.diagnosticWorkspaceRef
+        ? resources.find((r) => r.id === config.diagnosticWorkspaceRef)
+        : undefined;
+      return ref ? `appInsights${safeVarName(ref.name)}.outputs.logAnalyticsWorkspaceId` : `''`;
+    })()}
   }
 }`);
   });

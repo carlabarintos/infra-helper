@@ -708,6 +708,8 @@ function KeyVaultConfigurator({
   const config = resource.config as KeyVaultConfig;
   const { state } = useStore();
   const otherResources = state.project.resources.filter((r) => r.id !== resource.id);
+  const storageAccounts = state.project.resources.filter((r) => r.type === 'storageAccount');
+  const appInsightsList = state.project.resources.filter((r) => r.type === 'appInsights');
 
   function toggleAccess(id: string) {
     const current = config.accessPolicies;
@@ -771,6 +773,32 @@ function KeyVaultConfigurator({
             ))}
           </div>
         )}
+      </div>
+
+      <div>
+        <Label>Diagnostic Settings — Storage Account</Label>
+        <Select
+          value={config.diagnosticStorageAccountRef ?? ''}
+          onChange={(v) => update({ diagnosticStorageAccountRef: v || undefined })}
+        >
+          <option value="">None</option>
+          {storageAccounts.map((r) => (
+            <option key={r.id} value={r.id}>{r.name}</option>
+          ))}
+        </Select>
+      </div>
+
+      <div>
+        <Label>Diagnostic Settings — Log Analytics Workspace</Label>
+        <Select
+          value={config.diagnosticWorkspaceRef ?? ''}
+          onChange={(v) => update({ diagnosticWorkspaceRef: v || undefined })}
+        >
+          <option value="">None</option>
+          {appInsightsList.map((r) => (
+            <option key={r.id} value={r.id}>{r.name} (workspace)</option>
+          ))}
+        </Select>
       </div>
 
       <Toggle

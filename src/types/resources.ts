@@ -50,6 +50,8 @@ export interface KeyVaultConfig {
   softDeleteRetentionDays: number;
   enablePrivateEndpoint: boolean;
   accessPolicies: string[];
+  diagnosticStorageAccountRef?: string;
+  diagnosticWorkspaceRef?: string;
 }
 
 export interface AppInsightsConfig {
